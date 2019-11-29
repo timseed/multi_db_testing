@@ -105,7 +105,7 @@ class test_physical_mysql_db(test_memory_db):
 
     logger = logging.getLogger(__name__)
     user = "root"
-    password = "ducati"
+    password = "Passw0rd"
     host = "localhost"
     db = "userchannel"
     # We need to drop the Database via the Service - not Attach to the Database
