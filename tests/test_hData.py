@@ -1,39 +1,66 @@
+"""
+Db Tests.
+Main purpose to see if we can test 3 physical implementation of
+the same schema, using the same code-base.
+And we can ...
+"""
+# pylint:disable=unused-wildcard-import,broad-except, wildcard-import
 import logging
 from unittest import TestCase
-from hData.orm import *
 import pymysql
+from sqlalchemy.orm import Session
+
+from hData.orm import *
+
 
 class test_memory_db(TestCase):
+    """
+    Db Tests using the Inmemory Sqlite3 system initially.
+    """
+
     logger = logging.getLogger(__name__)
     engine = create_engine("sqlite:///:memory:", echo=False)
 
-
-    def get_session(self):
+    def get_session(self) -> Session:
+        """
+        Can we get a Session
+        """
         smsession = sessionmaker(bind=self.engine)
         smsession.configure(bind=self.engine)
         session = smsession()
+        self.assertIsInstance(session, Session)
         return session
 
     def test_1_create(self):
+        """
+        Create all the Db tables defined in the ORM module
+        """
         Base.metadata.create_all(self.engine)
 
     def test_2_orm_insert(self):
+        """
+        Check we can insert using ORM syntax
+        """
         session = self.get_session()
-        u1 = User(name="Bob")
-        u2 = User(name="Fred")
+        user_one = User(name="Bob")
+        user_two = User(name="Fred")
         ch1 = Channel(name="BBC")
         ch2 = Channel(name="CNN")
         ch3 = Channel(name="HKTV")
-        u1.channels.append(ch1)
-        u1.channels.append(ch2)
-        u2.channels.append(ch3)
-        session.add_all([u1, u2, ch1, ch2, ch3])
+        user_one.channels.append(ch1)
+        user_one.channels.append(ch2)
+        user_two.channels.append(ch3)
+        session.add_all([user_one, user_two, ch1, ch2, ch3])
         session.commit()
 
     def test_3_queries(self):
+        """
+        Query db.
+        Check we get the expected results
+        """
         session = self.get_session()
-        p = session.query(User).first()
-        print(f"{p.name}")
+        user_test = session.query(User).first()
+        self.assertEqual(user_test.name, "Bob")
         all_rec = [rec for rec in session.query(Channel).all()]
         self.assertEqual(len(all_rec), 3)
         #
@@ -43,39 +70,48 @@ class test_memory_db(TestCase):
         self.assertEqual(len(all_user), 3)
 
         # Query with no Join ... Bad result
-        q = Query([User, Channel, UserChannel], session=session)
-        self.assertEqual(q.count(), 18)
+        query_result = Query([User, Channel, UserChannel], session=session)
+        self.assertEqual(query_result.count(), 18)
 
-        q = Query([User, Channel, UserChannel], session=session). \
-            filter(User.user_id == UserChannel.user_id). \
-            filter(Channel.channel_id == UserChannel.channel_id)
-        self.assertEqual(q.count(), 3)
-        print("Test Done")
+        query_result = (
+            Query([User, Channel, UserChannel], session=session)
+            .filter(User.user_id == UserChannel.user_id)
+            .filter(Channel.channel_id == UserChannel.channel_id)
+        )
+        self.assertEqual(query_result.count(), 3)
+        print("Tests Done")
 
 
 class test_physical_sqlite_db(test_memory_db):
+    """
+    Now use a physical sqlite Db
+    """
+
     logger = logging.getLogger(__name__)
     import os
+
     try:
-        os.unlink('/tmp/userchannel.db')
+        os.unlink("/tmp/userchannel.db")
     except Exception:
         pass
     logger = logging.getLogger(__name__)
     engine = create_engine("sqlite:////tmp/userchannel.db", echo=False)
 
 
-    # We need to drop all the tables first
-
-    print("Testing sqlite PhysicalDb")
-
 class test_physical_mysql_db(test_memory_db):
+    """
+    Now use a physical mysql local database
+    """
+
     logger = logging.getLogger(__name__)
-    user='root'
-    password='ducati'
-    host='localhost'
-    db='userchannel'
+    user = "root"
+    password = "ducati"
+    host = "localhost"
+    db = "userchannel"
     # We need to drop the Database via the Service - not Attach to the Database
-    connection = pymysql.connect(host=host, user=user, password=password, charset="utf8")
+    connection = pymysql.connect(
+        host=host, user=user, password=password, charset="utf8"
+    )
     try:
         # Create a cursor object
         dbCursor = connection.cursor()
@@ -93,7 +129,8 @@ class test_physical_mysql_db(test_memory_db):
     finally:
         connection.close()
 
-    engine = create_engine('mysql+mysqldb://root:ducati@localhost/userchannel', pool_recycle=3600)
+    engine = create_engine(
+        "mysql+mysqldb://root:ducati@localhost/userchannel", pool_recycle=3600
+    )
     for t in engine.table_names():
-        print(f"We have Table {t}")
-
+        print(f"We have Table {t} and we SHOULD NOT HAVE THIS")
