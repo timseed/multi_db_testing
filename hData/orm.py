@@ -2,19 +2,9 @@
 ORM database Table, Indexes and Relationships.
 """
 # pylint: disable=invalid-name, protected-access
-from typing import Tuple
-
-from sqlalchemy import Column, Integer, String, ForeignKey, UniqueConstraint, Index
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
-from sqlalchemy import select
-from sqlalchemy.schema import DDLElement
-from sqlalchemy.sql import table
-from sqlalchemy.ext import compiler
-from sqlalchemy import Table, select, Column, String, ForeignKey, Integer, create_engine
+from sqlalchemy import Table, select, Column, String, ForeignKey, Integer, create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref, Query
-from pprint import pprint
 
 Base = declarative_base()
 
