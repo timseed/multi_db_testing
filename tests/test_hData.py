@@ -1,26 +1,23 @@
-from unittest import TestCase
 import logging
-from sqlalchemy import create_engine
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import sessionmaker, Query
-from hData.orm import *
+from unittest import TestCase
 
-logger = logging.getLogger(__name__)
-engine = create_engine("sqlite:///:memory:", echo=False)
+from hData.orm import *
 
 
 class test_memory_db(TestCase):
 
+    logger = logging.getLogger(__name__)
+    engine = create_engine("sqlite:///:memory:", echo=False)
+
     def get_session(self):
-        smsession = sessionmaker(bind=engine)
-        smsession.configure(bind=engine)
+
+        smsession = sessionmaker(bind=self.engine)
+        smsession.configure(bind=self.engine)
         session = smsession()
         return session
 
-
     def test_1_create(self):
-        Base.metadata.create_all(engine)
-
+        Base.metadata.create_all(self.engine)
 
     def test_2_orm_insert(self):
         session = self.get_session()
@@ -39,13 +36,13 @@ class test_memory_db(TestCase):
         session = self.get_session()
         p = session.query(User).first()
         print(f"{p.name}")
-        all_rec=[rec for rec in session.query(Channel).all()]
+        all_rec = [rec for rec in session.query(Channel).all()]
         self.assertEqual(len(all_rec), 3)
         #
         # Check the Join table is there
         #
         all_user = [rec for rec in session.query(UserChannel).all()]
-        self.assertEqual(len(all_user),3)
+        self.assertEqual(len(all_user), 3)
 
         # Query with no Join ... Bad result
         q = Query([User, Channel, UserChannel], session=session)
@@ -55,3 +52,5 @@ class test_memory_db(TestCase):
             filter(User.user_id == UserChannel.user_id). \
             filter(Channel.channel_id == UserChannel.channel_id)
         self.assertEqual(q.count(), 3)
+
+
