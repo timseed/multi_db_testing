@@ -9,6 +9,7 @@ import logging
 from unittest import TestCase
 import pymysql
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import *
 
 from hData.orm import *
 
@@ -52,6 +53,20 @@ class test_memory_db(TestCase):
         user_two.channels.append(ch3)
         session.add_all([user_one, user_two, ch1, ch2, ch3])
         session.commit()
+
+
+    def test_3_insert_fails(self):
+        """
+        This seems a good test to ensure that a Column marked as unique can not have a duplicate value in it.
+        Note: Fred is alread added in proceeding test.
+        """
+        session = self.get_session()
+        user_three = User(name="Fred")
+        session.add(user_three)
+        with self.assertRaises(IntegrityError):
+            session.commit()
+        session.rollback()
+
 
     def test_3_queries(self):
         """
@@ -100,7 +115,8 @@ class test_physical_sqlite_db(test_memory_db):
 
 class test_physical_mysql_db(test_memory_db):
     """
-    Now use a physical mysql local database
+    Now use a physical mysql local database.
+    Note: mysqlD instance needs to be running.
     """
 
     logger = logging.getLogger(__name__)

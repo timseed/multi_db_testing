@@ -42,12 +42,12 @@ class UserChannel(Base):
 class User(Base):
     __tablename__ = "user"
     user_id = Column(Integer, autoincrement=True, primary_key=True)
-    name = Column(String(20))
+    name = Column(String(20), unique=True)
     channels = relationship("Channel", secondary="userchannel")
 
 
 class Channel(Base):
     __tablename__ = "channel"
     channel_id = Column(Integer, autoincrement=True, primary_key=True)
-    name = Column(String(20))
+    name = Column(String(20), unique=True)
     users = relationship("User", secondary="userchannel")
